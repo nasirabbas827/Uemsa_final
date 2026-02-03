@@ -498,7 +498,7 @@ $conn->close();
                 <div class="hero-badge animate-fade-in-up">
                     <i class="fas fa-graduation-cap mr-2"></i> University Platform
                 </div>
-                <h1 class="animate-fade-in-up text-white" style="animation-delay: 0.2s">University Event Management System</h1>
+                <h1 class="animate-fade-in-up text-white" style="animation-delay: 0.2s">Welcome to UEMS - Central Hub for University Events</h1>
                 <p class="lead animate-fade-in-up" style="animation-delay: 0.4s">
                     Streamline event organization, participation, and management across campus. 
                     From workshops to cultural festivals, UEMS connects the entire university community.

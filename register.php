@@ -6,42 +6,55 @@ require './PHPMailer/src/Exception.php';
 require './PHPMailer/src/PHPMailer.php';
 require './PHPMailer/src/SMTP.php';
 
-
 include('config.php');
 
-$first_name = $last_name = $email = $phone = $role = "";
+$first_name = $last_name = $email = $phone = $role = $department = "";
 $errors = [];
 $success_msg = "";
+
+$allowed_roles = ['Student','Faculty','Event Organizer'];
+$allowed_departments = [
+    'Computer Science',
+    'Software Engineering',
+    'Information Technology',
+    'Business Administration',
+    'Electrical Engineering',
+    'Other'
+];
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     // First Name
-    if (empty(trim($_POST['first_name']))) {
+    $first_name = trim($_POST['first_name'] ?? '');
+    if ($first_name === '') {
         $errors[] = "First name is required";
-    } else {
-        $first_name = trim($_POST['first_name']);
     }
 
     // Last Name
-    if (empty(trim($_POST['last_name']))) {
+    $last_name = trim($_POST['last_name'] ?? '');
+    if ($last_name === '') {
         $errors[] = "Last name is required";
-    } else {
-        $last_name = trim($_POST['last_name']);
     }
 
     // Role
-    $allowed_roles = ['Student','Faculty','Event Organizer'];
-    if (!isset($_POST['role']) || !in_array($_POST['role'], $allowed_roles)) {
+    $role = $_POST['role'] ?? '';
+    if (!in_array($role, $allowed_roles)) {
         $errors[] = "Invalid role selected";
-    } else {
-        $role = $_POST['role'];
     }
 
-    // Email
-    if (empty(trim($_POST['email']))) {
+    // Department
+    $department = $_POST['department'] ?? '';
+    if (!in_array($department, $allowed_departments)) {
+        $errors[] = "Invalid department selected";
+    }
+
+    // Email (University only)
+    $email = trim($_POST['email'] ?? '');
+    if ($email === '') {
         $errors[] = "Email is required";
+    } elseif (!preg_match('/^[a-zA-Z0-9._%+-]+@vu\.edu\.pk$/', $email)) {
+        $errors[] = "Email must be a valid university email (@vu.edu)";
     } else {
-        $email = trim($_POST['email']);
         $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
@@ -52,27 +65,34 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $stmt->close();
     }
 
-    // Password
-    if (empty($_POST['password']) || strlen($_POST['password']) < 6) {
-        $errors[] = "Password must be at least 6 characters";
+    // Password + Confirm Password
+    $password = $_POST['password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
+
+    if (strlen($password) < 8) {
+        $errors[] = "Password must be at least 8 characters";
+    } elseif ($password !== $confirm_password) {
+        $errors[] = "Passwords do not match";
     } else {
-        $password_hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
+        $password_hash = password_hash($password, PASSWORD_DEFAULT);
     }
 
     // Phone (Optional)
     $phone = !empty($_POST['phone']) ? trim($_POST['phone']) : NULL;
 
+    // Insert if no errors
     if (empty($errors)) {
 
         $stmt = $conn->prepare("
             INSERT INTO users 
-            (role, first_name, last_name, email, password_hash, phone, status)
-            VALUES (?, ?, ?, ?, ?, ?, 'pending')
+            (role, department, first_name, last_name, email, password_hash, phone, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
         ");
 
         $stmt->bind_param(
-            "ssssss",
+            "sssssss",
             $role,
+            $department,
             $first_name,
             $last_name,
             $email,
@@ -82,17 +102,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         if ($stmt->execute()) {
 
-            // Verification email (email-based, no token)
             $verify_link = "http://localhost/fall25/uems/verify_email.php?email=" . urlencode($email);
 
             $mail = new PHPMailer(true);
-
             try {
                 $mail->isSMTP();
                 $mail->Host = 'smtp.gmail.com';
                 $mail->SMTPAuth = true;
-                $mail->Username = 'nasiryt.827@gmail.com'; // Your Gmail
-                $mail->Password = 'ddgc zhft gohg bjmz';   // Your Gmail App password
+                $mail->Username = 'nasiryt.827@gmail.com';
+                $mail->Password = 'ddgc zhft gohg bjmz';
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port = 587;
 
@@ -103,7 +121,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $mail->Subject = 'Verify Your Account - UEMS';
                 $mail->Body = "
                     <p>Hello <strong>$first_name</strong>,</p>
-                    <p>Please click the button below to activate your account.</p>
+                    <p>Please verify your university account:</p>
                     <p>
                         <a href='$verify_link'
                            style='padding:10px 15px;background:#007bff;color:#fff;text-decoration:none;'>
@@ -111,18 +129,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         </a>
                     </p>
                 ";
-
                 $mail->send();
+            } catch (Exception $e) {}
 
-            } catch (Exception $e) {
-                // Email failure should not block registration
-            }
-
-            $success_msg = "Registration successful. Please check your email to activate your account.";
-
-            // Reset form values
-            $first_name = $last_name = $email = $phone = $role = "";
-
+            $success_msg = "Registration successful. Please check your university email.";
+            $first_name = $last_name = $email = $phone = $role = $department = "";
         } else {
             $errors[] = "Registration failed";
         }
@@ -139,11 +150,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <head>
     <meta charset="UTF-8">
     <title>User Registration - UEMS</title>
-
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
@@ -151,7 +158,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <?php include('navbar.php'); ?>
 
 <div class="container mt-5">
-    <div class="card shadow mx-auto" style="max-width: 800px;">
+    <div class="card shadow mx-auto" style="max-width: 850px;">
         <div class="card-body">
 
             <h3 class="text-center mb-4">User Registration</h3>
@@ -160,73 +167,77 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <div class="alert alert-danger">
                     <ul class="mb-0">
                         <?php foreach ($errors as $error): ?>
-                            <li><?php echo $error; ?></li>
+                            <li><?= htmlspecialchars($error) ?></li>
                         <?php endforeach; ?>
                     </ul>
                 </div>
             <?php endif; ?>
 
-            <?php if (!empty($success_msg)): ?>
+            <?php if ($success_msg): ?>
                 <div class="alert alert-success text-center">
-                    <?php echo $success_msg; ?>
+                    <?= htmlspecialchars($success_msg) ?>
                 </div>
             <?php endif; ?>
 
-            <form method="post" novalidate>
+            <form method="post">
 
-                <!-- Row 1 -->
                 <div class="row">
                     <div class="col-md-6 form-group">
                         <label>First Name</label>
-                        <input type="text" name="first_name" class="form-control"
-                               value="<?php echo htmlspecialchars($first_name); ?>">
+                        <input type="text" name="first_name" class="form-control" value="<?= htmlspecialchars($first_name) ?>" required>
                     </div>
-
                     <div class="col-md-6 form-group">
                         <label>Last Name</label>
-                        <input type="text" name="last_name" class="form-control"
-                               value="<?php echo htmlspecialchars($last_name); ?>">
+                        <input type="text" name="last_name" class="form-control" value="<?= htmlspecialchars($last_name) ?>" required>
                     </div>
                 </div>
 
-                <!-- Row 2 -->
                 <div class="row">
                     <div class="col-md-6 form-group">
-                        <label>Email</label>
-                        <input type="email" name="email" class="form-control"
-                               value="<?php echo htmlspecialchars($email); ?>">
+                        <label>University Email</label>
+                        <input type="email" name="email" class="form-control" value="<?= htmlspecialchars($email) ?>" required>
                     </div>
-
-                    <div class="col-md-6 form-group">
-                        <label>Password</label>
-                        <input type="password" name="password" class="form-control">
-                    </div>
-                </div>
-
-                <!-- Row 3 -->
-                <div class="row">
                     <div class="col-md-6 form-group">
                         <label>Phone (Optional)</label>
-                        <input type="text" name="phone" class="form-control"
-                               value="<?php echo htmlspecialchars($phone); ?>">
+                        <input type="text" name="phone" class="form-control" value="<?= htmlspecialchars($phone) ?>">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label>Password</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label>Confirm Password</label>
+                        <input type="password" name="confirm_password" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label>Register As</label>
+                        <select name="role" class="form-control" required>
+                            <option value="">Select Role</option>
+                            <?php foreach ($allowed_roles as $r): ?>
+                                <option value="<?= $r ?>" <?= $role === $r ? 'selected' : '' ?>><?= $r ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
 
                     <div class="col-md-6 form-group">
-                        <label>Register As</label>
-                        <select name="role" class="form-control">
-                            <option value="">Select Role</option>
-                            <option value="Student" <?php if ($role === 'Student') echo 'selected'; ?>>Student</option>
-                            <option value="Faculty" <?php if ($role === 'Faculty') echo 'selected'; ?>>Faculty</option>
-                            <option value="Event Organizer" <?php if ($role === 'Event Organizer') echo 'selected'; ?>>Event Organizer</option>
+                        <label>Department</label>
+                        <select name="department" class="form-control" required>
+                            <option value="">Select Department</option>
+                            <?php foreach ($allowed_departments as $d): ?>
+                                <option value="<?= $d ?>" <?= $department === $d ? 'selected' : '' ?>><?= $d ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                 </div>
 
-                <!-- Button -->
-                <div class="row">
-                    <div class="col text-center mt-4">
-                        <button type="submit" class="btn btn-primary px-5">Register</button>
-                    </div>
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary px-5">Register</button>
                 </div>
 
             </form>

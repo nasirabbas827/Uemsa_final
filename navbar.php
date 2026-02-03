@@ -10,6 +10,8 @@
                 echo '<li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>';
                 echo '<li class="nav-item"><a class="nav-link" href="logout.php">Logout</a></li>';
             } else {
+                echo '<li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>';
+                echo '<li class="nav-item"><a class="nav-link" href="about.php">About</a></li>';
                 echo '<li class="nav-item"><a class="nav-link" href="register.php">Register</a></li>';
                 echo '<li class="nav-item"><a class="nav-link" href="login.php">Login</a></li>';
                 echo '<li class="nav-item"><a class="nav-link" href="./admin/admin_login.php">Admin Login</a></li>';

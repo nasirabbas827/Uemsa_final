@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 24, 2026 at 08:37 AM
+-- Generation Time: Feb 03, 2026 at 08:11 AM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -350,6 +350,7 @@ INSERT INTO `resources` (`id`, `resource_name`, `total_quantity`) VALUES
 CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `role` enum('Student','Faculty','Event Organizer') NOT NULL,
+  `department` varchar(100) NOT NULL,
   `first_name` varchar(100) NOT NULL,
   `last_name` varchar(100) NOT NULL,
   `email` varchar(150) NOT NULL,
@@ -366,10 +367,11 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `role`, `first_name`, `last_name`, `email`, `password_hash`, `phone`, `profile_image`, `system_notifications`, `status`, `created_at`, `updated_at`) VALUES
-(1, 'Event Organizer', 'Event', 'Organizer', 'nasiryt.827@gmail.com', '$2y$10$oSePuxoQ5FWZAI4XGNyOE.zc/1vK23xNBDGg/yiDioqYjnpK845Me', '3176526827', 'Doctor.jpg', 0, 'active', '2026-01-23 05:44:02', '2026-01-23 06:05:56'),
-(2, 'Student', 'Student', 'One', 'saifx280@gmail.com', '$2y$10$GIhN3B.ajgF.eFl3XKvJBePh10AwRO/q2RpyDoxpBTX2Rx6JE0m4C', '+92 3120558090', NULL, 1, 'active', '2026-01-24 05:45:24', '2026-01-24 06:07:49'),
-(3, 'Faculty', 'Faculty', 'One', 'faculty@gmail.com', '$2y$10$kHqdw46xkuqGZsFxb7jrn.61YcTUApLtMbILlCc8tmTAGqT64J8Oq', '+92 3120558090', NULL, 1, 'active', '2026-01-24 07:32:55', '2026-01-24 07:33:11');
+INSERT INTO `users` (`id`, `role`, `department`, `first_name`, `last_name`, `email`, `password_hash`, `phone`, `profile_image`, `system_notifications`, `status`, `created_at`, `updated_at`) VALUES
+(1, 'Event Organizer', '', 'Event', 'Organizer', 'nasiryt.827@gmail.com', '$2y$10$oSePuxoQ5FWZAI4XGNyOE.zc/1vK23xNBDGg/yiDioqYjnpK845Me', '3176526827', 'Doctor.jpg', 0, 'active', '2026-01-23 05:44:02', '2026-01-23 06:05:56'),
+(2, 'Student', '', 'Student', 'One', 'saifx280@gmail.com', '$2y$10$GIhN3B.ajgF.eFl3XKvJBePh10AwRO/q2RpyDoxpBTX2Rx6JE0m4C', '+92 3120558090', NULL, 1, 'active', '2026-01-24 05:45:24', '2026-01-24 06:07:49'),
+(3, 'Faculty', '', 'Faculty', 'One', 'faculty@gmail.com', '$2y$10$kHqdw46xkuqGZsFxb7jrn.61YcTUApLtMbILlCc8tmTAGqT64J8Oq', '+92 3120558090', NULL, 1, 'active', '2026-01-24 07:32:55', '2026-01-24 07:33:11'),
+(4, 'Student', 'Business Administration', 'Shumaila', 'Idrees', 'bc200205006@vu.edu.pk', '$2y$10$G.fQwdPv6wWJ9qhI08HSP.JeiLBj1KgX5UWi9KNVR05WLi86ZmUNS', '03176526434', '69819c6616144.jpg', 1, 'active', '2026-02-03 06:54:44', '2026-02-03 06:57:42');
 
 -- --------------------------------------------------------
 
@@ -631,7 +633,7 @@ ALTER TABLE `resources`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `venues`
